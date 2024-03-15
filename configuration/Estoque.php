@@ -10,18 +10,22 @@ class Estoque
     $this->connection = $connection;
   }
 
-  public static function getItemByName(string $name)
+  public function itemExists(string $name)
   {
     try {
-      $stmt = self::$connection->prepare('SELECT * FROM estoque WHERE produto = ?');
+      $stmt = $this->connection->prepare('SELECT * FROM estoque WHERE produto = ?');
       $stmt->execute([$name]);
-      return $stmt->fetch();
+      $stmt->fetch();
+      if ($stmt->rowCount() > 0) {
+        return true;
+      }
+      return false;
     } catch (PDOException $e) {
       return false;
     }
   }
 
-  function insertItem($objetoJSON, $exists)
+  public function upsertItem($objetoJSON, $exists)
   {
     try {
       $dados = json_decode($objetoJSON, true);
@@ -39,9 +43,8 @@ class Estoque
         $sql = "UPDATE estoque SET cor = ?, tamanho = ?, deposito = ?, data_disponibilidade = ?, quantidade = ? WHERE produto = ?";
       }
 
-      $stmt = self::$connection->prepare($sql);
+      $stmt = $this->connection->prepare($sql);
       $stmt->execute([$cor, $tamanho, $deposito, $data_disponibilidade, $quantidade, $produto]);
-
       return true;
     } catch (PDOException $e) {
       echo 'Erro ao inserir dados: ' . $e->getMessage();
